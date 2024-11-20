@@ -144,7 +144,7 @@
     <h1>Todo List</h1>
     <div id="todo-list"></div>
     <div style="text-align: center; margin-top: 20px;">
-        <button onclick="addTodoItem()">Add Todo</button>
+        <button id="add-todo-button" onclick="addTodoItem()">Add Todo</button>
         <span class="settings-icon" onclick="toggleSettings()">&#9881;</span> <!-- Unicode for a gear icon -->
     </div>
     <div id="settings" class="popup">
@@ -342,8 +342,10 @@
         function toggleSettings() {
             const settings = document.getElementById('settings');
             const todoList = document.getElementById('todo-list');
+            const addTodoButton = document.getElementById('add-todo-button');
             settings.style.display = settings.style.display === 'none' ? 'block' : 'none';
             todoList.classList.toggle('blurred', settings.style.display === 'block');
+            addTodoButton.classList.toggle('blurred', settings.style.display === 'block');
         }
 
         function toggleDarkMode() {
@@ -371,8 +373,10 @@
         function toggleWarningPopup() {
             const warningPopup = document.getElementById('warning-popup');
             const todoList = document.getElementById('todo-list');
+            const addTodoButton = document.getElementById('add-todo-button');
             warningPopup.style.display = warningPopup.style.display === 'none' ? 'block' : 'none';
             todoList.classList.toggle('blurred', warningPopup.style.display === 'block');
+            addTodoButton.classList.toggle('blurred', warningPopup.style.display === 'block');
         }
 
         function loadFromFile() {
