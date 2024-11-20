@@ -126,6 +126,18 @@
             float: right;
             margin-left: 10px; /* Add margin to prevent overlap */
         }
+        .popup .confirm-btn {
+            background-color: #4a4e69;
+            color: #fff;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        .blurred {
+            filter: blur(5px);
+        }
     </style>
 </head>
 <body>
@@ -144,6 +156,16 @@
         <label>
             <input type="checkbox" id="darkModeToggle" onclick="toggleDarkMode()"> Enable Dark Mode
         </label>
+        <br>
+        <input type="file" id="fileInput" style="display: none;" onchange="confirmLoadFromFile(event)">
+        <button onclick="document.getElementById('fileInput').click()">Load Todos</button>
+        <button onclick="saveTodosToFile()">Save Todos</button>
+    </div>
+
+    <div id="warning-popup" class="popup">
+        <p>Loading todos will remove all existing todos. Are you sure you want to continue?</p>
+        <button class="close-btn" onclick="toggleWarningPopup()">Cancel</button>
+        <button class="confirm-btn" onclick="loadFromFile()">Confirm</button>
     </div>
 
     <script>
@@ -184,6 +206,7 @@
             const colorPicker = document.createElement('input');
             colorPicker.type = 'color';
             colorPicker.className = 'color-picker';
+            colorPicker.value = '#ffffff'; // Set default color to white
             colorPicker.oninput = function() {
                 todoItem.style.backgroundColor = colorPicker.value;
                 saveTodos();
@@ -318,7 +341,9 @@
 
         function toggleSettings() {
             const settings = document.getElementById('settings');
+            const todoList = document.getElementById('todo-list');
             settings.style.display = settings.style.display === 'none' ? 'block' : 'none';
+            todoList.classList.toggle('blurred', settings.style.display === 'block');
         }
 
         function toggleDarkMode() {
@@ -333,6 +358,46 @@
                 });
             });
             document.getElementById('settings').classList.toggle('dark-mode', isDarkMode);
+        }
+
+        function confirmLoadFromFile(event) {
+            const file = event.target.files[0];
+            if (file) {
+                toggleWarningPopup();
+                document.getElementById('fileInput').file = file;
+            }
+        }
+
+        function toggleWarningPopup() {
+            const warningPopup = document.getElementById('warning-popup');
+            const todoList = document.getElementById('todo-list');
+            warningPopup.style.display = warningPopup.style.display === 'none' ? 'block' : 'none';
+            todoList.classList.toggle('blurred', warningPopup.style.display === 'block');
+        }
+
+        function loadFromFile() {
+            const file = document.getElementById('fileInput').file;
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const todos = JSON.parse(e.target.result);
+                    localStorage.setItem('todos', JSON.stringify(todos));
+                    loadTodos();
+                };
+                reader.readAsText(file);
+            }
+            toggleWarningPopup();
+        }
+
+        function saveTodosToFile() {
+            const todos = JSON.parse(localStorage.getItem('todos')) || [];
+            const blob = new Blob([JSON.stringify(todos, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'todos.json';
+            a.click();
+            URL.revokeObjectURL(url);
         }
     </script>
 </body>
