@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Todo List</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+        body.dark-mode {
+            background-color: #333;
+            color: #f4f4f9;
+        }
+        h1 {
+            text-align: center;
+            color: #4a4e69;
+        }
+        h1.dark-mode {
+            color: #f4f4f9;
+        }
+        #todo-list {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        #todo-list.dark-mode {
+            background-color: #444;
+        }
+        .todo-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #fafafa;
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+        .todo-item.dark-mode {
+            background-color: #555;
+            border-color: #666;
+        }
+        .todo-item.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .todo-item.checked {
+            opacity: 0.5;
+        }
+        .todo-item input[type="text"] {
+            margin-right: 10px;
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            flex: 1;
+        }
+        .todo-item input[type="text"].dark-mode {
+            background-color: #666;
+            color: #f4f4f9;
+            border-color: #888;
+        }
+        .todo-item .color-picker {
+            margin-right: 10px;
+        }
+        .todo-item .checkmark {
+            margin-right: 10px;
+            cursor: pointer;
+        }
+        button {
+            background-color: #4a4e69;
+            color: #fff;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #3b3e5b;
+        }
+        .delete-icon {
+            cursor: pointer;
+            margin-left: 10px;
+            color: #ff6b6b;
+            font-size: 20px;
+        }
+        .settings-icon {
+            cursor: pointer;
+            margin-left: 10px;
+            color: #4a4e69;
+            font-size: 20px;
+        }
+        .popup {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #fff;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            z-index: 1000;
+        }
+        .popup.dark-mode {
+            background-color: #444;
+            color: #f4f4f9;
+        }
+        .popup .close-btn {
+            background-color: #ff6b6b;
+            color: #fff;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            float: right;
+            margin-left: 10px; /* Add margin to prevent overlap */
+        }
+    </style>
+</head>
+<body>
+    <h1>Todo List</h1>
+    <div id="todo-list"></div>
+    <div style="text-align: center; margin-top: 20px;">
+        <button onclick="addTodoItem()">Add Todo</button>
+        <span class="settings-icon" onclick="toggleSettings()">&#9881;</span> <!-- Unicode for a gear icon -->
+    </div>
+    <div id="settings" class="popup">
+        <button class="close-btn" onclick="toggleSettings()">&#10006;</button> <!-- Unicode for a cross mark -->
+        <label>
+            <input type="checkbox" id="resetTodos"> Reset todos as undone after a day
+        </label>
+        <br>
+        <label>
+            <input type="checkbox" id="darkModeToggle" onclick="toggleDarkMode()"> Enable Dark Mode
+        </label>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', loadTodos);
+
+        function addTodoItem() {
+            const todoList = document.getElementById('todo-list');
+            const todoItem = document.createElement('div');
+            todoItem.className = 'todo-item';
+
+            const checkmark = document.createElement('input');
+            checkmark.type = 'checkbox';
+            checkmark.className = 'checkmark';
+            checkmark.onchange = function() {
+                if (checkmark.checked) {
+                    todoItem.classList.add('checked');
+                } else {
+                    todoItem.classList.remove('checked');
+                }
+                saveTodos();
+            };
+
+            const nameInput = document.createElement('input');
+            nameInput.type = 'text';
+            nameInput.placeholder = 'Name';
+            nameInput.oninput = saveTodos;
+
+            const descriptionInput = document.createElement('input');
+            descriptionInput.type = 'text';
+            descriptionInput.placeholder = 'Description';
+            descriptionInput.oninput = saveTodos;
+
+            const topicInput = document.createElement('input');
+            topicInput.type = 'text';
+            topicInput.placeholder = 'Topic';
+            topicInput.oninput = saveTodos;
+
+            const colorPicker = document.createElement('input');
+            colorPicker.type = 'color';
+            colorPicker.className = 'color-picker';
+            colorPicker.oninput = function() {
+                todoItem.style.backgroundColor = colorPicker.value;
+                saveTodos();
+            };
+
+            const deleteIcon = document.createElement('span');
+            deleteIcon.className = 'delete-icon';
+            deleteIcon.innerHTML = '&#10006;'; // Unicode for a cross mark
+            deleteIcon.onclick = function() {
+                todoList.removeChild(todoItem);
+                saveTodos();
+            };
+
+            todoItem.appendChild(checkmark);
+            todoItem.appendChild(nameInput);
+            todoItem.appendChild(descriptionInput);
+            todoItem.appendChild(topicInput);
+            todoItem.appendChild(colorPicker);
+            todoItem.appendChild(deleteIcon);
+
+            todoList.appendChild(todoItem);
+
+            // Trigger animation
+            requestAnimationFrame(() => {
+                todoItem.classList.add('show');
+            });
+
+            saveTodos();
+        }
+
+        function saveTodos() {
+            const todos = [];
+            document.querySelectorAll('.todo-item').forEach(item => {
+                const todo = {
+                    checked: item.querySelector('.checkmark').checked,
+                    name: item.querySelector('input[placeholder="Name"]').value,
+                    description: item.querySelector('input[placeholder="Description"]').value,
+                    topic: item.querySelector('input[placeholder="Topic"]').value,
+                    color: item.querySelector('.color-picker').value
+                };
+                todos.push(todo);
+            });
+            localStorage.setItem('todos', JSON.stringify(todos));
+        }
+
+        function loadTodos() {
+            const todos = JSON.parse(localStorage.getItem('todos')) || [];
+            todos.forEach(todo => {
+                if (!todo.name && !todo.description && !todo.topic) {
+                    return; // Skip empty todos
+                }
+
+                const todoList = document.getElementById('todo-list');
+                const todoItem = document.createElement('div');
+                todoItem.className = 'todo-item';
+                todoItem.style.backgroundColor = todo.color; // Set the background color
+
+                const checkmark = document.createElement('input');
+                checkmark.type = 'checkbox';
+                checkmark.className = 'checkmark';
+                checkmark.checked = todo.checked;
+                checkmark.onchange = function() {
+                    if (checkmark.checked) {
+                        todoItem.classList.add('checked');
+                    } else {
+                        todoItem.classList.remove('checked');
+                    }
+                    saveTodos();
+                };
+
+                const nameInput = document.createElement('input');
+                nameInput.type = 'text';
+                nameInput.placeholder = 'Name';
+                nameInput.value = todo.name;
+                nameInput.oninput = saveTodos;
+
+                const descriptionInput = document.createElement('input');
+                descriptionInput.type = 'text';
+                descriptionInput.placeholder = 'Description';
+                descriptionInput.value = todo.description;
+                descriptionInput.oninput = saveTodos;
+
+                const topicInput = document.createElement('input');
+                topicInput.type = 'text';
+                topicInput.placeholder = 'Topic';
+                topicInput.value = todo.topic;
+                topicInput.oninput = saveTodos;
+
+                const colorPicker = document.createElement('input');
+                colorPicker.type = 'color';
+                colorPicker.className = 'color-picker';
+                colorPicker.value = todo.color;
+                colorPicker.oninput = function() {
+                    todoItem.style.backgroundColor = colorPicker.value;
+                    saveTodos();
+                };
+
+                const deleteIcon = document.createElement('span');
+                deleteIcon.className = 'delete-icon';
+                deleteIcon.innerHTML = '&#10006;'; // Unicode for a cross mark
+                deleteIcon.onclick = function() {
+                    todoList.removeChild(todoItem);
+                    saveTodos();
+                };
+
+                todoItem.appendChild(checkmark);
+                todoItem.appendChild(nameInput);
+                todoItem.appendChild(descriptionInput);
+                todoItem.appendChild(topicInput);
+                todoItem.appendChild(colorPicker);
+                todoItem.appendChild(deleteIcon);
+
+                todoList.appendChild(todoItem);
+
+                // Trigger animation
+                requestAnimationFrame(() => {
+                    todoItem.classList.add('show');
+                });
+            });
+
+            // Check if resetTodos is enabled and reset todos if necessary
+            if (document.getElementById('resetTodos').checked) {
+                setTimeout(() => {
+                    document.querySelectorAll('.todo-item').forEach(item => {
+                        item.querySelector('.checkmark').checked = false;
+                        item.classList.remove('checked');
+                    });
+                    saveTodos();
+                }, 24 * 60 * 60 * 1000); // 24 hours in milliseconds
+            }
+        }
+
+        function toggleSettings() {
+            const settings = document.getElementById('settings');
+            settings.style.display = settings.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function toggleDarkMode() {
+            const isDarkMode = document.getElementById('darkModeToggle').checked;
+            document.body.classList.toggle('dark-mode', isDarkMode);
+            document.querySelector('h1').classList.toggle('dark-mode', isDarkMode);
+            document.getElementById('todo-list').classList.toggle('dark-mode', isDarkMode);
+            document.querySelectorAll('.todo-item').forEach(item => {
+                item.classList.toggle('dark-mode', isDarkMode);
+                item.querySelectorAll('input[type="text"]').forEach(input => {
+                    input.classList.toggle('dark-mode', isDarkMode);
+                });
+            });
+            document.getElementById('settings').classList.toggle('dark-mode', isDarkMode);
+        }
+    </script>
+</body>
+</html>
